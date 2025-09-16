@@ -21,36 +21,25 @@ MAX_MESSAGES = 5
 already_in_chat = False
 latest_players = None
 last_players = set()
-# sent_messages = []
-women_playing = ["kibziy", "conimoss", "Katrin2256"]#перенести в бд
 
 @exception_handler
 def send_and_track(text):
-    # global sent_messages
-    # if len(sent_messages) >= MAX_MESSAGES:
-    #     oldest_message = sent_messages.pop(0)
-    #     try:
-    #         bot.delete_message(chat_players, oldest_message)
-    #         logger.info(f"Сообщение с id {oldest_message} удалено из треда {thread_chat_players}.")
-    #     except Exception as e:
-    #         logger.error(f"Ошибка удаления сообщения: {e}")
-    #         bot.send_message(chat_admin, f"Ошибка удаления сообщения в треде {thread_chat_players}:\n{e}")
 
     msg = bot.send_message(chat_players, text, message_thread_id=thread_chat_players)
-    # sent_messages.append(msg.message_id)
+
     return msg
-# def register(nickname):
-#     logger.info(f"Сообщение о регистрации для игрока {nickname} отправлено в чат.")
-#     keyboard = InlineKeyboardMarkup()
-#     keyboard.add(InlineKeyboardButton("Зарегистрироваться", callback_data="butn_1"))
-#
-#     bot.send_message(
-#         chat_id=chat_players,
-#         text=f"Эт самое, Захар беспокоит, едрить-мадрить...\n"
-#              f"Тут какой-то {nickname} зашел. {nickname}, Захар тебя не знает!\n",
-#         reply_markup=keyboard,
-#         message_thread_id=thread_chat_players
-#     )
+
+def send_register_message(player_or_players):
+    lines = "Настоятельно прошу зарегистрироваться:\n"
+    if isinstance(player_or_players, list):
+        playerlist = [f"{i}. {p}" for i, p in enumerate(player_or_players, 1)]
+        lines += "\n".join(playerlist)
+    elif isinstance(player_or_players, str):
+        lines += f"{player_or_players}\n"
+    logger.info("Сообщение о регистрации отправлено для:\n"+ player_or_players)
+    keybord = InlineKeyboardMarkup()
+    keybord.add(InlineKeyboardButton("Зарегистрироваться", callback_data="regme_pls"))
+    bot.send_message(chat_id=chat_players, text=lines, reply_markup=keybord, message_thread_id=thread_chat_players)
 @exception_handler
 def polling_start():
 
@@ -86,69 +75,145 @@ def players_online():
                             send_and_track(rline)
                         if isinstance(user_data, dict):
                             tags_list = user_data[player][1]
-                            if "admin" in tags_list:
+                            if "architect" in tags_list and "admin" in tags_list:
+                                rline = [f"Алло, яндекс, вы там чем занимаетесь?\n"
+                                         f"|{user_data[player][0]}| {player} вошел и тут в компьютерных монстров играет.\n"
+                                         f"Все мы знаем Славу, Слава тоже победил в тендере на мою статую!"]
+                            elif "admin" in tags_list:
                                 rline = (f"Трепещите! Этот  хмырь может менять гейммод!\n"
                                          f"|{user_data[player][0]}| {player} операторской походкой вползает в игру.")
                                 send_and_track(rline)
-                            if "papa" in tags_list:
+                            elif "papa" in tags_list:
                                 rline = (f"Папа! Папочка! Папаша! О создатель, хвала тебе!\n"
                                          f"Свет твоих мудрых очей озаряет мне путь!\n"
                                          f"Вечного терпения тебе и сил!\n"
                                          f"Хвала случаю, ты соизволил снизойти в игру...\n"
                                          f"\n"
                                          f"В деревне \"Мама пришла\" в низинах медной горы торжественный звон!\n"
-                                         f"|{user_data[player][0]}| {player} явил свой лик на сервере.")
+                                         f"|{user_data[player][0]}| {player} явил свой лик на сервер.")
                                 send_and_track(rline)
-                            if "woman" in tags_list: #СНЕЖАНЕ НЕ СТАВИТЬ ТЕГ ЖЕНЩИНА
+                            elif "woman" in tags_list: #СНЕЖАНЕ НЕ СТАВИТЬ ТЕГ ЖЕНЩИНА
                                 rline = (f"На сервер стучится дама!\n"
                                          f"Джентельмены кланяются, а Захар держит в руке алую розу:\n"
                                          f"|{user_data[player][0]}| {player} заходит в игру")
                                 send_and_track(rline)
-                            if "architect" in tags_list:
+                            elif "architect" in tags_list:
                                 rline = [f"Приветствую тебя, Снежана! Великая архитектресса моего лика:\n"
                                          f"|{user_data[player][0]}| {player} входит на сервер\n"
                                          f"Джентельмены, с почтением к этой леди!"]
                                 send_and_track(rline)
-                            if "architect" and "admin" in tags_list:
-                                rline = [f"Алло, яндекс, вы там чем занимаетесь?\n"
-                                         f"|{user_data[player][0]}| {player} вошел и тут в компьютерных монстров играет.\n"
-                                         f"Все мы знаем Славу, Слава тоже победил в тендере на мою статую!"]
+
                                 send_and_track(rline)
-
-
-
+                    if not registered:
+                        pass#нужно создать меню
 
             elif len(joined) > 1:
-                lines = [f"{i}. {p}" for i, p in enumerate(joined, 1)]
+                lines_of_registered = []
+                lines_of_not_registered = []
+                for p in joined:
+                    registered = check_if_registered(p)
+                    if registered:
+                        user_data = lookup_procedure(p)
+                        if isinstance(user_data, dict):
+                            tags_list = user_data[p][1]
+                            if "architect" in tags_list and "admin" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka Слава. Все мы знаем Славу")
+                            elif "admin" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka админ.")
+                            elif "papa" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka великий папа Захара.")
+                            elif "woman" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka милая леди.")
+                            elif "architect" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka архитектор моей статуи.")
 
-                if "GeNGnidov" in joined and not any(item in joined for item in women_playing):
-                    msg = ("однако есть лучик надежды. О, создатель, куда ты ведешь свою павству?\n"
-                           "Аве тебе! Аве Гнидову!:\n" + "\n".join(lines))
-                elif "GeNGnidov" in joined and any(item in joined for item in women_playing):
-                    msg = ("но хвала случаю, здесь создатель. Да еще и в дамской компании!\n"
-                           "Аве тебе! Аве Гнидову-джентельмену!:\n" + "\n".join(lines))
-                elif any(item in joined for item in women_playing) and "GeNGnidov" not in joined:
-                    msg = ("но не все так плохо, ведь джентельменов сопровождают дамы!:\n" + "\n".join(lines))
-                else:
-                    msg = "вот эти черкизовцы гурьбой залетели на сервак:\n" + "\n".join(lines)
-                send_and_track(f"Захар докладывает, моря неспокойны: {msg}")
+                        if isinstance(user_data, list):
+                            lines_of_registered.append(f"|{user_data[1]}| {p}.")
+                    if not registered:
+                        lines_of_not_registered.append(p)
+                lines_to_send= "Диво какое! Сразу гурьбой набежали! На сервер заходят кучей:\n" + "\n".join([f"{i}. {line}" for i, line in enumerate(lines_of_registered, 1)])
+                if lines_of_not_registered:
+                    lines2= "\nОднако в куче есть и незарегистрированные игроки:\n" + "\n".join([f"{i}. {pla}" for i, pla in enumerate(lines_of_not_registered, 1)])
+                    lines_to_send+= lines2
+                send_and_track(lines_to_send)
+                if lines_of_not_registered:
+                    pass#кнопка регистрации
+
+
+
+
             if len(left) == 1:
                 for player in left:
-                    if player == "GeNGnidov":
-                        send_and_track(f"Захар кланяется: {player} покинул игру, я буду ждать тебя, мой повелитель!")
-                    elif player in women_playing:
-                        send_and_track(f"Захар протягивает руку и помогает спуститься по ступеньке: {player} покинула сервер.")
-                    else:
-                        send_and_track(f"Захар докладывает: {player} вышел с сервера")
+                    registered = check_if_registered(player)
+                    if registered:
+                        user_data = lookup_procedure(player)
+                        if isinstance(user_data, list):
+                            rline = (f"Пока-пока!\n"
+                                     f"|{user_data[1]}| {user_data[0]} скалисто покидает сервер.")
+
+                            send_and_track(rline)
+                        if isinstance(user_data, dict):
+                            tags_list = user_data[player][1]
+                            if "architect" in tags_list and "admin" in tags_list:
+                                rline = [f"Вячеслав пошел бесплатно кататься на яндекс такси.\n"
+                                         f"|{user_data[player][0]}| {player} покидает сервер.\n"
+                                         f"Хоть и шмель корпоратский, но статую мне забабахал, с уважением к этому джентельмену."]
+                            elif "admin" in tags_list:
+                                rline = (f"Никаких больше /gamerule и /kill\n"
+                                         f"|{user_data[player][0]}| {player} покинул сервер и пошел по своим операторским делам.")
+                            elif "papa" in tags_list:
+                                rline = (f"Скоро увидимся, Отец!!\n"
+                                         f"Я буду следить за ситуацией!\n"
+                                         f"Хвала твоей вечной мудрости!\n"
+                                         f"Скорее возвращайся!\n"
+                                         f"\n"
+                                         f"В деревне \"Мама пришла\" траур!\n"
+                                         f"|{user_data[player][0]}| {player} покинул игру.")
+                            elif "woman" in tags_list:  # СНЕЖАНЕ НЕ СТАВИТЬ ТЕГ ЖЕНЩИНА
+                                rline = (f"Захар снимает шляпу!\n"
+                                         f"Джентельмены провожают даму взглядом, а Захар ведет ее к выходу:\n"
+                                         f"|{user_data[player][0]}| {player} покидает игру.")
+                            elif "architect" in tags_list:
+                                rline = [f"До скорой встречи, Снежана! Благодаря твоей статуе я лучше слежу за сервером:\n"
+                                         f"|{user_data[player][0]}| {player} покидает сервер.\n"]
+
+                            send_and_track(rline)
+                    if not registered:
+
+                        pass#кнопка
             elif len(left) > 1:
-                lines = [f"{i}. {p}" for i, p in enumerate(left, 1)]
-                if "GeNGnidov" in left and not any(item in left for item in women_playing):
-                    msg = ("Катастрофа! Покинули сервер по предварительному сговору! И создателя забрали! Фиксирую ушедших:\n" + "\n".join(lines))
-                elif "GeNGnidov" in left and any(item in left for item in women_playing):
-                    msg = ("Создатель в женской компании покидает сервер. Создатель, прощай! Только дам потом верни! Фиксирую ушедших:\n" + "\n".join(lines))
-                elif any(item in left for item in women_playing) and "GeNGnidov" not in left:
-                    msg = ("джентельмены в компании дам покидают сервер. Надеюсь, их кавалеры не против. Фиксирую ушедших:\n" + "\n".join(lines))
-                send_and_track(f"Захар докладывает: {msg}")
+                lines_of_registered = []
+                lines_of_not_registered = []
+                for p in joined:
+                    registered = check_if_registered(p)
+                    if registered:
+                        user_data = lookup_procedure(p)
+                        if isinstance(user_data, dict):
+                            tags_list = user_data[p][1]
+                            if "architect" in tags_list and "admin" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka Слава. Все мы знаем Славу")
+                            elif "admin" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka админ.")
+                            elif "papa" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka великий папа Захара.")
+                            elif "woman" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka милая леди.")
+                            elif "architect" in tags_list:
+                                lines_of_registered.append(f"|{user_data[p][0]}| {p} aka архитектор моей статуи.")
+
+                        if isinstance(user_data, list):
+                            lines_of_registered.append(f"|{user_data[1]}| {p}.")
+                    if not registered:
+                        lines_of_not_registered.append(p)
+                lines_to_send = "Что-ж, очень жаль. Массово покинули сервер:\n" + "\n".join(
+                    [f"{i}. {line}" for i, line in enumerate(lines_of_registered, 1)])
+                if lines_of_not_registered:
+                    lines2 = "\nВ том числе и нелегалы без регистрации! Самодепортируются:\n" + "\n".join(
+                        [f"{i}. {pla}" for i, pla in enumerate(lines_of_not_registered, 1)])
+                    lines_to_send += lines2
+                send_and_track(lines_to_send)
+                if lines_of_not_registered:
+                    pass  # кнопка регистрации
 
             last_players = latest_players
 
@@ -231,7 +296,17 @@ def callback_query(call):
             logger.error(f"Ошибка удаления сообщения с кнопкой: {e}")
         bot.send_message(chat_id, "Привет, эта функция еще в разработке!", message_thread_id=thread_id)
         bot.answer_callback_query(call.id)
+    if call.data == "regme_pls":
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+            logger.info(f"Удалено сообщение с кнопкой в чате {chat_id}")
+        except Exception as e:
+            logger.error(f"Ошибка удаления сообщения с кнопкой: {e}")
+        try:
+            bot.send_message(chat_id, "Ура! Успех!", message_thread_id=thread_id)
+            logger.info(f"Игрок начал процедуру регистрации.")
+        except Exception as e:
+            logger.error(f"Ошибка в процедуре регистрации: {e}")
+        bot.answer_callback_query(call.id)
 
-if __name__ == "__main__":
 
-    register("supostat")

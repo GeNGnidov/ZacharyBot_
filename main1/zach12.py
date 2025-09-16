@@ -1,4 +1,4 @@
-from bot_main import register_name_mention_handler, bot, polling_start, players_online, chat_players, thread_chat_players
+from bot_main import register_name_mention_handler, bot, polling_start, players_online, chat_players, thread_chat_players, send_register_message
 from utils import logger
 
 if __name__ == "__main__":
@@ -14,6 +14,8 @@ if __name__ == "__main__":
                      "3. Захар теперь пишет автоматические уведомления в специальный тред (ну, точнее, в этот). Вызвать Захара все еще можно в любом чате.", message_thread_id=thread_chat_players)
 
     polling_start()
+
+
 
     # Запускаем цикл опроса сервера
     players_online()
