@@ -374,10 +374,19 @@ def change_level(user_nickname:str,xp_points:int):#готова
         logger.info(finish_line)
 
     return finish_line
-#delete_tag
+def delete_tag(user_nickname:str, tag_to_delete:str): #сделать чтобыв выдавал список всех тегов
+    user = session.query(MCuser).filter_by(nickname=user_nickname).first()
+
+    if not user:
+        logger.info("Пользователь с таким никнеймом не найден")
+        return False
+    session.query(Tag).filter_by(owner=user.tg_user_id, tag=tag_to_delete).delete()
+    session.commit()
+    return True
+
 
 if __name__ == "__main__":
-    pass
+    delete_tag("Suka", "admin")
 
 
 
