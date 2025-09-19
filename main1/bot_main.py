@@ -21,6 +21,8 @@ MAX_MESSAGES = 5
 already_in_chat = False
 latest_players = None
 last_players = set()
+players_to_register= None
+bot_url = "https://t.me/zacha_test_bot"
 
 @exception_handler
 def send_and_track(text):
@@ -30,15 +32,18 @@ def send_and_track(text):
     return msg
 
 def send_register_message(player_or_players):
+    global players_to_register, bot_url
     lines = "Настоятельно прошу зарегистрироваться:\n"
     if isinstance(player_or_players, list):
         playerlist = [f"{i}. {p}" for i, p in enumerate(player_or_players, 1)]
         lines += "\n".join(playerlist)
     elif isinstance(player_or_players, str):
+
         lines += f"{player_or_players}\n"
     logger.info("Сообщение о регистрации отправлено для:\n"+ player_or_players)
+    players_to_register = player_or_players
     keybord = InlineKeyboardMarkup()
-    keybord.add(InlineKeyboardButton("Зарегистрироваться", callback_data="regme_pls"))
+    keybord.add(InlineKeyboardButton("Зарегистрироваться", url=bot_url))
     bot.send_message(chat_id=chat_players, text=lines, reply_markup=keybord, message_thread_id=thread_chat_players)
 @exception_handler
 def polling_start():
@@ -238,10 +243,11 @@ def register_name_mention_handler(bot_instance):
     @bot_instance.message_handler(func=lambda message:
         message.text and 'захаръ' in message.text.lower())
     def greet_with_buttons(message):
+        global bot_url
         logger.info(f"Обработчик 'захаръ' сработал в чате {message.chat.id}: {message.text}")
         keyboard = InlineKeyboardMarkup()
         keyboard.add(InlineKeyboardButton("О сервере", callback_data="btn_1"))
-        keyboard.add(InlineKeyboardButton("Зарегистрироваться", callback_data="btn_2"))
+        keyboard.add(InlineKeyboardButton("Зарегистрироваться", url=bot_url))
 
         # Получаем id треда (топика) из входящего сообщения, если есть
         thread_id = getattr(message, "message_thread_id", None)
@@ -255,10 +261,35 @@ def register_name_mention_handler(bot_instance):
             message_thread_id=thread_id  # Отправка именно в этот тред
         )
 
+@bot.message_handler(commands=["start"], func=lambda message: message.chat.type == "private" and message.text)
+def private_chat_message_handler(message):
+    try:
+        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.add(telebot.types.KeyboardButton("Зарегистрироваться"))
+        bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку для регистрации:", reply_markup=keyboard)
+        logger.info("Регистрация начата...")
+    except Exception as e:
+        logger.error(f"Ошибка в процедуре регистрации: {e}")
+
+@bot.message_handler(func=lambda message: message.chat.type == "private" and message.text == "Зарегистрироваться")
+def registration_step1(message):
+    global players_to_register
+    try:
+        if isinstance(players_to_register, str):
+            lines = f"Вы точно {players_to_register}? Будьте внимательны, этот аккаунт привяжется к вашему аккаунту в телеграмм!"
+            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard.add(telebot.types.KeyboardButton("Ага"))
+            keyboard.add(InlineKeyboardButton("Нет, отменить регистрацию"))
+            keyboard.add(InlineKeyboardButton("Нет, ввести другой ник"))
+            bot.send_message(chat_id=message.chat.id, text=lines, reply_markup=keyboard)
+            logger.info(f"Регистрация игрока {players_to_register}, шаг 1...")
+    except Exception as e:
+        logger.error(f"Ошибка в процедуре регистрации: {e}")
+
 @exception_handler
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    global latest_players, already_in_chat
+    global latest_players, already_in_chat, players_to_register
     server_ip_address = "89.169.166.102:25565"
     chat_id = call.message.chat.id
     thread_id = getattr(call.message, "message_thread_id", None)
@@ -294,19 +325,9 @@ def callback_query(call):
             logger.info(f"Удалено сообщение с кнопкой в чате {chat_id}")
         except Exception as e:
             logger.error(f"Ошибка удаления сообщения с кнопкой: {e}")
-        bot.send_message(chat_id, "Привет, эта функция еще в разработке!", message_thread_id=thread_id)
-        bot.answer_callback_query(call.id)
-    if call.data == "regme_pls":
-        try:
-            bot.delete_message(chat_id, call.message.message_id)
-            logger.info(f"Удалено сообщение с кнопкой в чате {chat_id}")
-        except Exception as e:
-            logger.error(f"Ошибка удаления сообщения с кнопкой: {e}")
-        try:
-            bot.send_message(chat_id, "Ура! Успех!", message_thread_id=thread_id)
-            logger.info(f"Игрок начал процедуру регистрации.")
-        except Exception as e:
-            logger.error(f"Ошибка в процедуре регистрации: {e}")
-        bot.answer_callback_query(call.id)
+
+
+
+
 
 
