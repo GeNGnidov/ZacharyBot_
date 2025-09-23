@@ -386,7 +386,8 @@ def delete_tag(user_nickname:str, tag_to_delete:str): #сделать чтобы
 
 
 if __name__ == "__main__":
-    delete_tag("Suka", "admin")
+    register_user(23, "PapaZahara", "admin")
+    register_user(13, "GeNGnidov", "woman")
 
 
 

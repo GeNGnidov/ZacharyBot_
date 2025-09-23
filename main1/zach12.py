@@ -1,5 +1,8 @@
-from bot_main import register_name_mention_handler, bot, polling_start, players_online, chat_players, thread_chat_players, send_register_message
+import bot_main
+from bot_main import register_name_mention_handler, bot, chat_players, threading_start, players_online, thread_chat_players
 from utils import logger
+import threading
+import time
 
 if __name__ == "__main__":
     logger.info("Бот Захар стартует...")
@@ -13,9 +16,8 @@ if __name__ == "__main__":
                      "2. Добавлены уникальные реакции при входе и выходе игрока если игрок девушка, или среди игроков девушка. Список ников еще неполный.\n"
                      "3. Захар теперь пишет автоматические уведомления в специальный тред (ну, точнее, в этот). Вызвать Захара все еще можно в любом чате.", message_thread_id=thread_chat_players)
 
-    polling_start()
+    threading_start()
 
 
 
-    # Запускаем цикл опроса сервера
-    players_online()
+
