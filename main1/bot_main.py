@@ -35,6 +35,7 @@ def send_and_track(text):
 
     return msg
 
+
 @exception_handler
 def threading_start():
 
@@ -56,7 +57,7 @@ def players_online():
             latest_players = set(query.players.list or [])
 
             if already_in_chat:
-                send_and_track("Охренеть, вы соизволили починить сервер! Все снова работает!")
+                send_and_track("Кто-то скажет: \"починили\", я скажу - совпадение. Сервер снова работает")
                 already_in_chat = False
 
             joined = latest_players - last_players
@@ -103,12 +104,13 @@ def players_online():
                                          f"Джентельмены, с почтением к этой леди!"]
                                 send_and_track(rline)
 
-                                send_and_track(rline)
+
                     if not registered:
                         rline = f"Некий {player} заходит на сервер..."
                         send_and_track(rline)
                         players_to_register = player
                         send_register_message(players_to_register)
+
 
 
             elif len(joined) > 1:
@@ -229,7 +231,7 @@ def players_online():
                     send_register_message(players_to_register)
 
             last_players = latest_players
-            players_to_register = None
+
 
         except TimeoutError:
             if not already_in_chat:
@@ -299,7 +301,7 @@ def send_register_message(player_or_players):
 @bot.message_handler(commands=["start"], func=lambda message: message.chat.type == "private")
 def private_chat_commands_handler(message):
     try:
-        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
         keyboard.add(telebot.types.KeyboardButton("Зарегистрироваться"))
         bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку для регистрации:", reply_markup=keyboard)
         logger.info("Регистрация начата...")
@@ -310,11 +312,12 @@ def private_chat_commands_handler(message):
 def first_message_handler(message):
     global players_to_register
     try:
+        logger.info(f"Состояние players_to_register: {type(players_to_register)} значение - {players_to_register}")
         if isinstance(players_to_register, (set, list)):
             lines = f"Вы кто-то из этих игроков?:\n"
             pls = [f"{i}. {line}" for i, line in enumerate(players_to_register, 1)]
             lines += "\n".join(pls)
-            keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True,  one_time_keyboard=True)
             for i in players_to_register:
                 keyboard1.add(telebot.types.KeyboardButton(i))
             keyboard1.add(telebot.types.KeyboardButton("Нет, отменить регистрацию"))
@@ -324,19 +327,20 @@ def first_message_handler(message):
             logger.info(f"Начата процедура регистрации игроков {players_to_register}")
         elif isinstance(players_to_register, str):
             lines = f"Вы точно {players_to_register}? Будьте внимательны, этот аккаунт привяжется к вашему аккаунту в телеграмм!"
-            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True,  one_time_keyboard=True)
             keyboard.add(telebot.types.KeyboardButton("Ага"))
             keyboard.add(telebot.types.KeyboardButton("Нет, отменить регистрацию"))
             keyboard.add(telebot.types.KeyboardButton("Нет, ввести другой ник"))
             bot.send_message(chat_id=message.chat.id, text=lines, reply_markup=keyboard)
             logger.info(f"Регистрация игрока {players_to_register}, фаза 1/2...")
         else:
-            bot.send_message(chat_id=message.chat.id, text="Нет данных для регистрации, попробуйте перезайти в майнкрафт")
+            bot.send_message(chat_id=message.chat.id, text="На сервере не найдены нелегалы. Если вы один из них - перезайдите в игру.")
     except Exception as e:
         logger.error(f"Ошибка в процедуре регистрации: {e}")
 @bot.message_handler(func=lambda message: message.chat.type == "private")
 def second_message_handler(message):
     global players_to_register, fuck_me
+
     if fuck_me:
         logger.info(f"Регистрация игрока {message.text} фаза 2/2...")
         register_user(message.from_user.id, message.text)
@@ -347,8 +351,8 @@ def second_message_handler(message):
 
     elif isinstance(players_to_register, (set, list)) and message.text in players_to_register:
 
-            lines = f"Вы точно {players_to_register}? Будьте внимательны, этот аккаунт привяжется к вашему аккаунту в телеграмм!"
-            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            lines = f"Вы точно {message.text}? Будьте внимательны, этот аккаунт привяжется к вашему аккаунту в телеграмм!"
+            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True,  one_time_keyboard=True)
             keyboard.add(telebot.types.KeyboardButton("Ага"))
             keyboard.add(InlineKeyboardButton("Нет, отменить регистрацию"))
             keyboard.add(InlineKeyboardButton("Нет, ввести другой ник"))
@@ -365,7 +369,7 @@ def second_message_handler(message):
             players_to_register = None
         if message.text.lower() == "нет, отменить регистрацию":
             logger.info(f"Регистрация игроков {players_to_register} отменена.")
-            bot.send_message(message.chat.id, f'Регистрация игроков {players_to_register} отменена')
+            bot.send_message(message.chat.id, f'Регистрация игрока {players_to_register} отменена')
             players_to_register = None
         if message.text.lower() == "нет, ввести другой ник":
             bot.send_message(chat_id=message.chat.id, text="Введите, пожалуйста, ник:")

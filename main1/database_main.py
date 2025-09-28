@@ -80,16 +80,16 @@ def register_user(user_tg:int, user_nickname:str, new_user_tag=None):#обраб
 
     telegramm_user = session.query(TGuser).filter_by(tg_id=user_tg).first()
     if telegramm_user:
-        finish_line = f"Пользователь с айди {user_tg} уже существует."
-        logger.info(finish_line)
+        new_tg_user = telegramm_user
+        logger.info(f"Пользователь {user_tg} найден в таблице пользователей...")
+    elif not telegramm_user:
+        new_tg_user = TGuser(tg_id=user_tg)
+        session.add(new_tg_user)
+        session.flush()
+        logger.info(f"Пользователь {user_tg} добавлен в таблицу пользователей...")
 
-        something_wrong = True
-        return finish_line, something_wrong
 
-    new_tg_user= TGuser(tg_id=user_tg)
-    session.add(new_tg_user)
-    session.flush()
-    logger.info(f"Пользователь {user_tg} добавлен в таблицу пользователей...")
+
 
     if new_user_tag is not None:
         new_tg_user_tag = Tag(owner=new_tg_user.id, tag=new_user_tag)
@@ -386,8 +386,8 @@ def delete_tag(user_nickname:str, tag_to_delete:str): #сделать чтобы
 
 
 if __name__ == "__main__":
-    register_user(23, "PapaZahara", "admin")
-    register_user(13, "GeNGnidov", "woman")
+    add_tag(57713855, "papa")
+
 
 
 
