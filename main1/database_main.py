@@ -241,6 +241,30 @@ def get_person_tag(user_nickname:str):#готова
         logger.info(f"У пользователя, которому принадлежит персонаж {user_nickname} нет тегов")
         return None
 
+def lookup_procedure_person(user_tg_id:int):
+    """Function that gets player data from player tg id
+
+        kwargs:
+
+        user_tg_id-- int - user id
+
+        returns 1 value:
+
+        list - list of accounts attached to this person
+
+        or
+
+        None -- if no accounts are attached"""
+    user_tg= session.query(TGuser).filter_by(tg_id=user_tg_id).first()
+    if not user_tg:
+        logger.info(f"Пользователь с айди {user_tg_id} не найден.")
+        return None
+
+    user_minecraft = session.query(MCuser).filter_by(tg_user_id=user_tg.id).all()
+    nicknames = [i.nickname for i in user_minecraft]
+    logger.info(f"У пользователя с айди {user_tg_id} обнаружены следующие персонажи:\n" + "\n".join(nicknames))
+    return nicknames
+
 @exception_handler
 def lookup_procedure(user_nickname:str):
     """Function that gets crucial info for the greeting/exiting message.
@@ -265,7 +289,7 @@ def lookup_procedure(user_nickname:str):
     user_data = [user_nickname, rank]
     return user_data
 @exception_handler
-def get_current_level(user_nickname:str):#готова
+def get_player_data(user_nickname:str):#готова
     """Gets current player level, rank, needed and current xp points.
 
     kwargs:
@@ -276,7 +300,11 @@ def get_current_level(user_nickname:str):#готова
 
     False -- if player with this playername does not exist
     or
-    finish_line --  string. Contains player data."""
+    lvl_data = {"nick":user_nickname,
+                "cur_xp":user_lvl.current_xp,
+                "need_xp":user_lvl.needed_xp,
+                "lev":user_lvl.player_lvl
+                "money":user_lvl.money}"""
     user = session.query(MCuser).filter_by(nickname=user_nickname).first()
     if not user:
         logger.info(f"Отсутствует игрок c именем {user_nickname}(get_current_level)")
@@ -284,16 +312,17 @@ def get_current_level(user_nickname:str):#готова
         return False
 
     user_lvl = session.query(Levels).filter_by(player_id=user.id).first()
+    user_inventory = session.query(Inventory).filter_by(player_id=user.id).first()
 
     lvl_data = {"nick":user_nickname,
                 "cur_xp":user_lvl.current_xp,
                 "need_xp":user_lvl.needed_xp,
-                "lev":user_lvl.player_lvl}
-    finish_line = (f"Текущий уровень игрока {user_nickname} - ({lvl_data["lev"]}){user.rank}\n"
-               f"Текущее количество опыта - {lvl_data['cur_xp']}\n"
-               f"Нужно до следующего уровня - {lvl_data['need_xp']}")
-    logger.info(finish_line)
-    return finish_line
+                "lev":user_lvl.player_lvl,
+                "money":user_inventory.money,
+                "rank":user.rank}
+
+    logger.info(lvl_data)
+    return lvl_data
 @exception_handler
 def add_money(user_nickname:str, value:int):#готова
     """ Adds money on minecraft player's account.
@@ -386,7 +415,7 @@ def delete_tag(user_nickname:str, tag_to_delete:str): #сделать чтобы
 
 
 if __name__ == "__main__":
-    add_tag(57713855, "papa")
+   register_user(57713855, "Asas_Gadov")
 
 
 

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="eaeeaaee-07a7-4735-b81d-317b3602ce77" name="Changes" comment="upd">
+    <list default="true" id="eaeeaaee-07a7-4735-b81d-317b3602ce77" name="Changes" comment="bugged buttons, but registration works">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main1/bot_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main1/bot_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main1/database_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main1/database_main.py" afterDir="false" />
@@ -96,12 +96,21 @@
       <option name="project" value="LOCAL" />
       <updated>1758658953162</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="bugged buttons, but registration works">
+      <option name="closed" value="true" />
+      <created>1759077999457</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1759077999457</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="delete_message" />
     <MESSAGE value="upd" />
-    <option name="LAST_COMMIT_MESSAGE" value="upd" />
+    <MESSAGE value="bugged buttons, but registration works" />
+    <option name="LAST_COMMIT_MESSAGE" value="bugged buttons, but registration works" />
   </component>
 </project>

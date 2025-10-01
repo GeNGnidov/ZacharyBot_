@@ -8,7 +8,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from utils import logger, exception_handler
-from database_main import check_if_registered, lookup_procedure, register_user
+from database_main import check_if_registered, lookup_procedure, register_user, lookup_procedure_person, get_player_data
 
 bot = telebot.TeleBot("7685347380:AAEGD2Cq10ab-xCzV2sxfNnAu73nmtCO4zo") #"8346333176:AAGwzaqSUyVTcIVyBZhUdH5FAs1R3nXpH8o"
 server = JavaServer.lookup("89.169.166.102:25565")
@@ -263,7 +263,8 @@ def register_name_mention_handler(bot_instance):
         logger.info(f"Обработчик 'захаръ' сработал в чате {message.chat.id}: {message.text}")
         keyboard = InlineKeyboardMarkup()
         keyboard.add(InlineKeyboardButton("О сервере", callback_data="btn_1"))
-        keyboard.add(InlineKeyboardButton("Зарегистрироваться", url=bot_url))
+        keyboard.add(InlineKeyboardButton("ZakharCompanion", callback_data="btn_2"))
+
 
         # Получаем id треда (топика) из входящего сообщения, если есть
         thread_id = getattr(message, "message_thread_id", None)
@@ -272,7 +273,7 @@ def register_name_mention_handler(bot_instance):
             chat_id=message.chat.id,
             text="Захар на связи, могу помочь со следующим:\n"
                  "1. Отобразить информацию о сервере (список игроков, статус)\n"
-                 "2. Зарегистрироваться в ZakharCompanion",
+                 "2. Отобразить информацию о твоем персонаже в ZakharCompanion",
             reply_markup=keyboard,
             message_thread_id=thread_id  # Отправка именно в этот тред
         )
@@ -383,6 +384,7 @@ def second_message_handler(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     global latest_players, already_in_chat, players_to_register
+    user_id = call.from_user.id
     server_ip_address = "89.169.166.102:25565"
     chat_id = call.message.chat.id
     thread_id = getattr(call.message, "message_thread_id", None)
@@ -412,6 +414,44 @@ def callback_query(call):
                              message_thread_id=thread_id)
 
         bot.answer_callback_query(call.id)
+    if call.data == "btn_2":
+        try:
+            bot.delete_message(chat_id, call.message.message_id)
+            logger.info(f"Удалено сообщение с кнопкой в чате {chat_id}")
+        except Exception as e:
+            logger.error(f"Ошибка удаления сообщения с кнопкой: {e}")
+
+        nicknames = lookup_procedure_person(user_id)
+        if not nicknames:
+            bot.send_message(chat_id,"Увы, но Захар не нашел привязанных к вашему аккаунту персонажей(", message_thread_id=thread_id)
+        elif len(nicknames) > 1:
+            lines = [f"{i}. {line}" for i, line in enumerate(nicknames, 1)]
+            print(lines)
+            message = "О! А я тебя сразу и не узнал! Я еще тебя знаю как:\n" + "\n".join(lines) + "\nКого показать? Все такие вкусные..."
+            bot.send_message(chat_id, text=message, message_thread_id=thread_id)
+        else:
+            user_data= get_player_data(nicknames[0])
+            message = ("===========================\n"
+                       f"{user_data["nick"]}\n"
+                       f"Ранг: [{user_data["lev"]}]{user_data["rank"]}\n"
+                       f"===========================\n"
+                       f"Текущий опыт: {user_data["cur_xp"]} XP\n"
+                       f"Нужно до след. уровня: {user_data["need_xp"]} XP\n"
+                       f"===========================\n"
+                       f"ЗахарБаксы: {user_data["money"]} ZB\n"
+                       f"===========================")
+            bot.send_message(chat_id, text=message, message_thread_id=thread_id)
+            if user_data["money"] < 10:
+                time.sleep(2)
+                bot.send_message(chat_id, "Не понимаю, как ты живешь на эти копейки...", message_thread_id=thread_id)
+
+
+
+
+        bot.answer_callback_query(call.id)
+
+
+
 
 
 
